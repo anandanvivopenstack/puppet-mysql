@@ -21,4 +21,5 @@ mysql::database{"mydb":
 - you have to define a global path for exec, like:
   Exec { path => "/usr/bin:/bin/...." } 
   You can put it in globals.pp
+- /usr/bin/pwgen must be available on the puppetmaster
 
