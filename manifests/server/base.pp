@@ -11,9 +11,9 @@ Parameters:
    creates a special user used by the init scripts.
 
 */
-class mysql::server::base {
-
-  include mysql::params
+class mysql::server::base(
+  $logfile_group = $::mysql::params::logfile_group,
+) inherits mysql::params {
 
   user { 'mysql':
     ensure  => present,
@@ -105,8 +105,6 @@ class mysql::server::base {
     refreshonly => true,
     creates     => "/root/.my.cnf",
   }
-
-  $logfile_group = $mysql::params::logfile_group
 
   file { '/etc/logrotate.d/mysql-server':
     ensure => present,
