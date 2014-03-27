@@ -3,9 +3,13 @@
 ==Class: mysql::server
 
 */
-class mysql::server {
+class mysql::server(
+  $logfile_group = undef,
+) {
 
-  include mysql::server::base
+  class { 'mysql::server::base':
+    logfile_group => $logfile_group,
+  }
 
   include mysql::config::performance
   include mysql::config::mysqld
