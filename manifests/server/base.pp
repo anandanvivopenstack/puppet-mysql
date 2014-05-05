@@ -60,7 +60,9 @@ class mysql::server::base(
     require   => Package['mysql-server'],
   }
 
-  if $mysql_user {} else { $mysql_user = 'root' }
+  if !defined('$mysql_user') {
+    $mysql_user = 'root'
+  }
 
   if $mysql_password {
 
