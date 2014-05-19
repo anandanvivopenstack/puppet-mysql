@@ -1,4 +1,6 @@
-class mysql::config::replication::master inherits mysql::config::replication {
+class mysql::config::replication::master(
+  $mysql_serverid,
+) inherits mysql::config::replication {
   Mysql::Config['log-bin'] {
     ensure => 'present',
     value  => 'mysql-bin',

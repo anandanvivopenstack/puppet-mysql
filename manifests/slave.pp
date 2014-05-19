@@ -3,8 +3,19 @@
 # Define a MySQL slave server
 #
 class mysql::slave(
+  $mysql_serverid,
+  $mysql_masterhost,
+  $mysql_masteruser,
+  $mysql_masterpw,
   $replication_binlog_format = 'STATEMENT',
-) inherits mysql::slave::common {
+) {
+
+  class { '::mysql::slave::common':
+    mysql_serverid   => $mysql_serverid,
+    mysql_masterhost => $mysql_masterhost,
+    mysql_masteruser => $mysql_masteruser,
+    mysql_masterpw   => $mysql_masterpw,
+  }
 
   # binlog_format comes with MySQL 5.1+
   # RHEL6+, Debian6+

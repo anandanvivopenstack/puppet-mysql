@@ -1,4 +1,8 @@
-class mysql::config::replication::slave inherits mysql::config::replication {
+class mysql::config::replication::slave(
+  $mysql_masterhost,
+  $mysql_masteruser,
+  $mysql_masterpw,
+) inherits mysql::config::replication {
   Mysql::Config['master-host'] {
     ensure => present,
     value  => $mysql_masterhost,
