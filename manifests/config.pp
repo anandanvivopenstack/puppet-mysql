@@ -47,6 +47,8 @@ define mysql::config (
     default: { err ( "unknown ensure value ${ensure}" ) }
   }
 
+  include ::mysql::params
+
   augeas { "my.cnf/${section}/${name}":
     incl    => $mysql::params::mycnf,
     lens    => 'MySQL.lns',
@@ -57,7 +59,7 @@ define mysql::config (
       ],
     require => [
       File[$mysql::params::mycnf],
-      File[$mysql::params::data_dir],
+      File[$mysql::server::data_dir],
       ],
     notify  => Service['mysql'],
   }

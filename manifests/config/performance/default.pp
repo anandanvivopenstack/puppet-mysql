@@ -1,4 +1,4 @@
-class mysql::config::performance {
+class mysql::config::performance::default {
   # force use of system defaults
   mysql::config {
     'key_buffer':                      ensure => absent;

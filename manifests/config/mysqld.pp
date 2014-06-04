@@ -4,7 +4,7 @@ class mysql::config::mysqld {
     'old_passwords':        value => '0';
     'character-set-server': value => 'utf8';
     'log-warnings':         value => '1';
-    'datadir':              value => "${mysql::params::data_dir}";
+    'datadir':              value => "${mysql::server::data_dir}";
     'log-error':            value => $::operatingsystem ? {
       /RedHat|Fedora|CentOS/ => '/var/log/mysqld.log',
       default                => '/var/log/mysql.err',
