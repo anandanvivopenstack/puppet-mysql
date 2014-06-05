@@ -2,6 +2,7 @@ class mysql::config::replication::slave(
   $mysql_masterhost,
   $mysql_masteruser,
   $mysql_masterpw,
+  $replication_binlog_format = 'STATEMENT',
 ) inherits mysql::config::replication {
   Mysql::Config['master-host'] {
     ensure => present,
@@ -30,4 +31,39 @@ class mysql::config::replication::slave(
     'relay_log_space_limit': value => '2048M';
     'max_relay_log_size':    value => '100M';
   }
+
+  # binlog_format comes with MySQL 5.1+
+  # RHEL6+, Debian6+
+  case  $::operatingsystem {
+
+    Debian: {
+      case $::lsbmajdistrelease {
+
+        '4','5': { }
+
+        default: {
+          mysql::config {'binlog_format':
+            value => $replication_binlog_format,
+          }
+        }
+      }
+
+    } # Debian
+
+    RedHat,CentOS: {
+      case $::lsbmajdistrelease {
+
+        '4','5': { }
+
+        default: {
+          mysql::config {'binlog_format':
+            value => $replication_binlog_format,
+          }
+        }
+      }
+
+    } # RedHat,CentOS
+
+  } # case $operatingsystem
+
 }

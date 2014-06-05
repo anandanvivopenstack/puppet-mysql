@@ -19,11 +19,16 @@ class mysql::server (
   $user = 'root',
   $password = undef,
   $unmanaged = false,
-  $replication_master = false,
+  $replication = undef,
   $replication_serverid = undef,
+  $replication_masterhost,
+  $replication_masteruser,
+  $replication_masterpw,
+  $replication_binlog_format = 'STATEMENT',
 ) inherits mysql::params {
 
   validate_re($performance, ['^no_conf', '^default','^small','^medium','^large','^huge'])
+  validate_re(pick($replication, 'NONE'), ['^NONE', '^master', '^slave'])
 
   if ! $unmanaged {
     if $performance != 'no_conf' {
@@ -36,11 +41,20 @@ class mysql::server (
     include mysql::config::client
   }
 
-  if $replication_master {
+  if $replication != undef {
     validate_string($replication_serverid)
 
     class { 'mysql::config::replication::master':
-      mysql_serverid => $mysql_serverid,
+      mysql_serverid => $replication_serverid,
+    }
+
+    if $replication == 'slave' {
+      class { '::mysql::config::replication::slave':
+        mysql_masterhost          => $replication_masterhost,
+        mysql_masteruser          => $replication_masteruser,
+        mysql_masterpw            => $replication_masterpw,
+        replication_binlog_format => $replication_binlog_format,
+      }
     }
   }
 
