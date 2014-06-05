@@ -21,9 +21,9 @@ class mysql::server (
   $unmanaged = false,
   $replication = undef,
   $replication_serverid = undef,
-  $replication_masterhost,
-  $replication_masteruser,
-  $replication_masterpw,
+  $replication_masterhost = undef,
+  $replication_masteruser = undef,
+  $replication_masterpw = undef,
   $replication_binlog_format = 'STATEMENT',
 ) inherits mysql::params {
 
@@ -49,6 +49,9 @@ class mysql::server (
     }
 
     if $replication == 'slave' {
+      validate_string($replication_masterhost)
+      validate_string($replication_masteruser)
+      validate_string($replication_masterpw)
       class { '::mysql::config::replication::slave':
         mysql_masterhost          => $replication_masterhost,
         mysql_masteruser          => $replication_masteruser,
