@@ -19,6 +19,8 @@ class mysql::server (
   $user = 'root',
   $password = undef,
   $unmanaged = false,
+  $replication_master = false,
+  $replication_serverid = undef,
 ) inherits mysql::params {
 
   validate_re($performance, ['^no_conf', '^default','^small','^medium','^large','^huge'])
@@ -32,6 +34,14 @@ class mysql::server (
     include mysql::config::replication
     include mysql::config::mysqld_safe
     include mysql::config::client
+  }
+
+  if $replication_master {
+    validate_string($replication_serverid)
+
+    class { 'mysql::config::replication::master':
+      mysql_serverid => $mysql_serverid,
+    }
   }
 
   user { 'mysql':
