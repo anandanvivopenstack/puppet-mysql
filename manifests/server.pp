@@ -27,11 +27,11 @@ class mysql::server (
   $replication_binlog_format = 'STATEMENT',
 ) inherits mysql::params {
 
-  validate_re($performance, ['^no_conf', '^default','^small','^medium','^large','^huge'])
+  validate_re($performance, ['^default','^small','^medium','^large','^huge'])
   validate_re(pick($replication, 'NONE'), ['^NONE', '^master', '^slave'])
 
   if ! $unmanaged {
-    if $performance != 'no_conf' {
+    if $performance != 'default' {
       class {"::mysql::config::performance::${performance}": }
     }
 
