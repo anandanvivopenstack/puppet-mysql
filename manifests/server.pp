@@ -13,6 +13,7 @@ Parameters:
 */
 class mysql::server (
   $performance = 'default',
+  $config_override = {},
   $logfile_group = $::mysql::params::logfile_group,
   $data_dir = '/var/lib/mysql',
   $backup_dir = '/var/backups/mysql',
@@ -31,8 +32,9 @@ class mysql::server (
   validate_re(pick($replication, 'NONE'), ['^NONE', '^master', '^slave'])
 
   if ! $unmanaged {
-    if $performance != 'default' {
-      class {"::mysql::config::performance::${performance}": }
+    class {"::mysql::config::performance":
+      level => $performance,
+      config_override => $config_override,
     }
 
     include mysql::config::mysqld
