@@ -13,4 +13,5 @@ class mysql::client {
       'RedHat' => 'mysql',
     },
   }
+
 }
