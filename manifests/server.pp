@@ -19,8 +19,9 @@ class mysql::server (
   $backup_dir = '/var/backups/mysql',
   $user = 'root',
   $password = undef,
-  $unmanaged = false,
-  $replication = undef,
+  $unmanaged_config = false,
+  $unmanaged_service = false,
+  $replication = 'NONE',
   $replication_serverid = undef,
   $replication_masterhost = undef,
   $replication_masteruser = undef,
@@ -28,39 +29,8 @@ class mysql::server (
   $replication_binlog_format = 'STATEMENT',
 ) inherits mysql::params {
 
-  validate_re($performance, ['^default','^small','^medium','^large','^huge'])
-  validate_re(pick($replication, 'NONE'), ['^NONE', '^master', '^slave'])
-
-  if ! $unmanaged {
-    class {"::mysql::config::performance":
-      level => $performance,
-      config_override => $config_override,
-    }
-
-    include mysql::config::mysqld
-    include mysql::config::replication
-    include mysql::config::mysqld_safe
-    include mysql::config::client
-  }
-
-  if $replication != undef {
-    validate_string($replication_serverid)
-
-    class { 'mysql::config::replication::master':
-      mysql_serverid => $replication_serverid,
-    }
-
-    if $replication == 'slave' {
-      validate_string($replication_masterhost)
-      validate_string($replication_masteruser)
-      validate_string($replication_masterpw)
-      class { '::mysql::config::replication::slave':
-        mysql_masterhost          => $replication_masterhost,
-        mysql_masteruser          => $replication_masteruser,
-        mysql_masterpw            => $replication_masterpw,
-        replication_binlog_format => $replication_binlog_format,
-      }
-    }
+  if ! $unmanaged_config {
+    include ::mysql::configuration
   }
 
   user { 'mysql':
@@ -98,9 +68,17 @@ class mysql::server (
     require => Package['mysql-server'],
   }
 
+  $service_ensure = $unmanaged_service ? {
+    false => 'running',
+    true  => undef,
+  }
+  $service_enable = $unmanaged_service ? {
+    false => true,
+    true  => false,
+  }
   service { 'mysql':
-    ensure      => running,
-    enable      => true,
+    ensure      => $service_ensure,
+    enable      => $service_enable,
     name        => $::osfamily ? {
       'RedHat' => 'mysqld',
       default  => 'mysql',
@@ -124,7 +102,6 @@ class mysql::server (
       group   => root,
       mode    => '0600',
       content => template('mysql/my.cnf.erb'),
-      require => Exec['Initialize MySQL server root password'],
     }
 
   } else {

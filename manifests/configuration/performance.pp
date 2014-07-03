@@ -1,11 +1,10 @@
-class mysql::config::performance (
-  $level,
-  $config_override = {},
-) {
+class mysql::configuration::performance {
 
-  case $level {
+  validate_re($::mysql::server::performance, ['^default','^small','^medium','^large','^huge'])
+
+  case $::mysql::server::performance {
     'huge': {
-      $level_config = {
+      $config = {
         'key_buffer' =>                 { value  => '384M' },
         'max_allowed_packet' =>         { value  => '1M' },
         'table_cache' =>                { value  => '512' },
@@ -29,7 +28,7 @@ class mysql::config::performance (
       }
     }
     'large': {
-      $level_config = {
+      $config = {
         'key_buffer' =>                 { value  => '256M' },
         'max_allowed_packet' =>         { value  => '1M' },
         'table_cache' =>                { value  => '256' },
@@ -53,7 +52,7 @@ class mysql::config::performance (
       }
     }
     'medium': {
-      $level_config = {
+      $config = {
         'key_buffer' =>                 { value  => '16M' },
         'max_allowed_packet' =>         { value  => '1M' },
         'table_cache' =>                { value  => '64' },
@@ -77,7 +76,7 @@ class mysql::config::performance (
       }
     }
     'small': {
-      $level_config = {
+      $config = {
         'key_buffer' =>                 { value  => '16K' },
         'max_allowed_packet' =>         { value  => '1M' },
         'table_cache' =>                { value  => '4' },
@@ -101,13 +100,9 @@ class mysql::config::performance (
       }
     }
     'default': {
-      $level_config = {}
+      $config = {}
     }
     default: { fail "Undefined performance level" }
   }
-
-  $actual_config = merge($level_config, $config_override)
-
-  create_resources(::mysql::config, $actual_config)
     
 }
