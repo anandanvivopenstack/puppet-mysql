@@ -1,16 +1,14 @@
-/*
-
-==Class: mysql::server
-
-Parameters:
- $data_dir:
-   set the data directory path, which is used to store all the databases
-
-   If set, copies the content of the default mysql data location. This is
-   necessary on Debian systems because the package installation script
-   creates a special user used by the init scripts.
-
-*/
+#
+# ==Class: mysql::server
+#
+# Parameters:
+#  $data_dir:
+#    set the data directory path, which is used to store all the databases
+#
+#    If set, copies the content of the default mysql data location. This is
+#    necessary on Debian systems because the package installation script
+#    creates a special user used by the init scripts.
+#
 class mysql::server (
   $performance = 'default',
   $config_override = {},
