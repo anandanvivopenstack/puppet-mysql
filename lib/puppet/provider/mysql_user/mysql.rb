@@ -24,7 +24,7 @@ Puppet::Type.type(:mysql_user).provide :mysql, :parent => Puppet::Provider::Pack
 	def self.instances
 		users = []
 
-		cmd = "#{mysql} mysql -NBe 'select concat(user, \"@\", host), password from user'"
+		cmd = "#{mysql} --defaults-extra-file=/root/.my.cnf mysql -NBe 'select concat(user, \"@\", host), password from user'"
 		execpipe(cmd) do |process|
 			process.each do |line|
 				users << new( query_line_to_hash(line) )
@@ -43,13 +43,13 @@ Puppet::Type.type(:mysql_user).provide :mysql, :parent => Puppet::Provider::Pack
 	end
 
 	def mysql_flush 
-		execute([mysqladmin, "flush-privileges"])
+		execute([mysqladmin, "--defaults-extra-file=/root/.my.cnf", "flush-privileges"])
 	end
 
 	def query
 		result = {}
 
-		cmd = "#{mysql} -NBe 'select concat(user, \"@\", host), password from user where concat(user, \"@\", host) = \"%s\"'" % @resource[:name]
+		cmd = "#{mysql} --defaults-extra-file=/root/.my.cnf -NBe 'select concat(user, \"@\", host), password from user where concat(user, \"@\", host) = \"%s\"'" % @resource[:name]
 		execpipe(cmd) do |process|
 			process.each do |line|
 				unless result.empty?
@@ -66,19 +66,19 @@ Puppet::Type.type(:mysql_user).provide :mysql, :parent => Puppet::Provider::Pack
 		# There is a longstanding MySQL bug where a user that does not appear to exist (previously deleted, etc) still cannot be created.
 		# http://bugs.mysql.com/bug.php?id=28331
 		# A workaround is to unconditionally drop the user and ignore the return value
-		execute([mysql, "mysql", "-e", "drop user '%s'" % [ @resource[:name].sub("@", "'@'") ]],
+		execute([mysql, "--defaults-extra-file=/root/.my.cnf", "mysql", "-e", "drop user '%s'" % [ @resource[:name].sub("@", "'@'") ]],
 				{:failonfail => false})
-		execute [mysql, "mysql", "-e", "create user '%s' identified by PASSWORD '%s'" % [ @resource[:name].sub("@", "'@'"), @resource.should(:password_hash) ]]
+		execute [mysql, "--defaults-extra-file=/root/.my.cnf", "mysql", "-e", "create user '%s' identified by PASSWORD '%s'" % [ @resource[:name].sub("@", "'@'"), @resource.should(:password_hash) ]]
 		mysql_flush
 	end
 
 	def destroy
-		execute [mysql, "mysql", "-e", "drop user '%s'" % @resource[:name].sub("@", "'@'")]
+		execute [mysql, "--defaults-extra-file=/root/.my.cnf", "mysql", "-e", "drop user '%s'" % @resource[:name].sub("@", "'@'")]
 		mysql_flush
 	end
 
 	def exists?
-		not execute([mysql, "mysql", "-NBe", "select '1' from user where CONCAT(user, '@', host) = '%s'" % @resource[:name]]).empty?
+		not execute([mysql, "--defaults-extra-file=/root/.my.cnf", "mysql", "-NBe", "select '1' from user where CONCAT(user, '@', host) = '%s'" % @resource[:name]]).empty?
 	end
 
 	def password_hash
@@ -86,7 +86,7 @@ Puppet::Type.type(:mysql_user).provide :mysql, :parent => Puppet::Provider::Pack
 	end
 
 	def password_hash=(string)
-		execute [mysql, "mysql", "-e", "SET PASSWORD FOR '%s' = '%s'" % [ @resource[:name].sub("@", "'@'"), string ]]
+		execute [mysql, "--defaults-extra-file=/root/.my.cnf", "mysql", "-e", "SET PASSWORD FOR '%s' = '%s'" % [ @resource[:name].sub("@", "'@'"), string ]]
 		mysql_flush
 	end
 end

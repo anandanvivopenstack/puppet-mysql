@@ -23,7 +23,7 @@ Puppet::Type.type(:mysql_database).provide :mysql, :parent => Puppet::Provider::
 	def self.instances
 		dbs = []
 
-		cmd = "#{mysql} mysql -NBe 'show databases'"
+		cmd = "#{mysql} --defaults-extra-file=/root/.my.cnf mysql -NBe 'show databases'"
 		execpipe(cmd) do |process|
 			process.each do |line|
 				dbs << new( { :ensure => :present, :name => line.chomp } )
@@ -38,7 +38,7 @@ Puppet::Type.type(:mysql_database).provide :mysql, :parent => Puppet::Provider::
 			:ensure => :absent
 		}
 
-		cmd = "#{mysql} mysql -NBe 'show databases'"
+		cmd = "#{mysql} --defaults-extra-file=/root/.my.cnf mysql -NBe 'show databases'"
 		execpipe(cmd) do |process|
 			process.each do |line|
 				if line.chomp.eql?(@resource[:name])
@@ -50,14 +50,14 @@ Puppet::Type.type(:mysql_database).provide :mysql, :parent => Puppet::Provider::
 	end
 
 	def create
-		execute [mysqladmin, "create", @resource[:name]]
+		execute [mysqladmin, "--defaults-extra-file=/root/.my.cnf", "create", @resource[:name]]
 	end
 	def destroy
-		execute [mysqladmin, "-f", "drop", @resource[:name]]
+		execute [mysqladmin, "--defaults-extra-file=/root/.my.cnf", "-f", "drop", @resource[:name]]
 	end
 
 	def exists?
-		if execute([mysql, "mysql", "-NBe", "show databases"]).match(/^#{@resource[:name]}$/)
+		if execute([mysql, "--defaults-extra-file=/root/.my.cnf", "mysql", "-NBe", "show databases"]).match(/^#{@resource[:name]}$/)
 			true
 		else
 			false
