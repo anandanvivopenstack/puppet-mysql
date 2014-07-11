@@ -20,6 +20,7 @@ class mysql::server (
   $password = undef,
   $unmanaged_config = false,
   $unmanaged_service = false,
+  $unmanaged_password = false,
   $replication = 'NONE',
   $replication_serverid = undef,
   $replication_masterhost = undef,
@@ -104,30 +105,34 @@ class mysql::server (
     }
 
   } else {
-    # If no password is supplied, generate on and set it in mysql and the
-    # .my.cnf file, but only once! We don't want the password to change
-    # on each puppet run!
 
-    $gen_password = generate('/usr/bin/pwgen', 20, 1)
-
-    file { '/root/.my.cnf':
-      owner   => root,
-      group   => root,
-      mode    => '0600',
-      require => Exec['Initialize MySQL server root password'],
-    }
-
-    exec { 'Initialize MySQL server root password':
-      unless  => 'test -f /root/.my.cnf',
-      command => "mysqladmin -u${user} password ${gen_password}",
-      notify  => Exec['Generate my.cnf'],
-      require => [Package['mysql-server'], Service['mysql']]
-    }
+    # In some case, we do not want default password
+    if ! $unmanaged_password {
+      # If no password is supplied, generate on and set it in mysql and the
+      # .my.cnf file, but only once! We don't want the password to change
+      # on each puppet run!
   
-    exec { "Generate my.cnf":
-      command     => "/bin/echo -e \"[mysql]\nuser=${user}\npassword=${gen_password}\n[mysqladmin]\nuser=${user}\npassword=${gen_password}\n[mysqldump]\nuser=${user}\npassword=${gen_password}\n[mysqlshow]\nuser=${user}\npassword=${gen_password}\n\" > /root/.my.cnf",
-      refreshonly => true,
-      creates     => "/root/.my.cnf",
+      $gen_password = generate('/usr/bin/pwgen', 20, 1)
+  
+      file { '/root/.my.cnf':
+        owner   => root,
+        group   => root,
+        mode    => '0600',
+        require => Exec['Initialize MySQL server root password'],
+      }
+  
+      exec { 'Initialize MySQL server root password':
+        unless  => 'test -f /root/.my.cnf',
+        command => "mysqladmin -u${user} password ${gen_password}",
+        notify  => Exec['Generate my.cnf'],
+        require => [Package['mysql-server'], Service['mysql']]
+      }
+    
+      exec { "Generate my.cnf":
+        command     => "/bin/echo -e \"[mysql]\nuser=${user}\npassword=${gen_password}\n[mysqladmin]\nuser=${user}\npassword=${gen_password}\n[mysqldump]\nuser=${user}\npassword=${gen_password}\n[mysqlshow]\nuser=${user}\npassword=${gen_password}\n\" > /root/.my.cnf",
+        refreshonly => true,
+        creates     => "/root/.my.cnf",
+      }
     }
   
   }
