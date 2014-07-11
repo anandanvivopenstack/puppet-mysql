@@ -37,7 +37,7 @@ Puppet::Type.type(:mysql_grant).provide(:mysql) do
 	end
 
 	def mysql_flush 
-		execute([mysqladmin, "flush-privileges"])
+		execute([mysqladmin, "--defaults-extra-file=/root/.my.cnf", "flush-privileges"])
 	end
 
 	# this parses the
