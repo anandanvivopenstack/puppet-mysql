@@ -13,12 +13,14 @@ class mysql::server (
   $performance = 'default',
   $config_override = {},
   $logfile_group = $::mysql::params::logfile_group,
+  $mycnf_group = 'root',
   $data_dir = '/var/lib/mysql',
   $backup_dir = '/var/backups/mysql',
   $user = 'root',
   $password = undef,
   $unmanaged_config = false,
   $unmanaged_service = false,
+  $unmanaged_password = false,
   $replication = 'NONE',
   $replication_serverid = undef,
   $replication_masterhost = undef,
@@ -60,7 +62,7 @@ class mysql::server (
     ensure  => present,
     path    => $mysql::params::mycnf,
     owner   => root,
-    group   => root,
+    group   => $mycnf_group,
     mode    => '0644',
     seltype => 'mysqld_etc_t',
     require => Package['mysql-server'],
@@ -84,49 +86,60 @@ class mysql::server (
     require   => Package['mysql-server'],
   }
 
-  if $password {
-    # If a password is supplied, set it in mysql and in the .my.cnf file
+  if $unmanaged_password {
 
-    mysql_user { "${user}@localhost":
-      ensure        => present,
-      password_hash => mysql_password($password),
-      require       => File['/root/.my.cnf'],
-      alias         => 'mysql root',
-    }
-
-    file { '/root/.my.cnf':
-      ensure  => present,
-      owner   => root,
-      group   => root,
-      mode    => '0600',
-      content => template('mysql/my.cnf.erb'),
+    # We don't manage anything password related if $unmanaged_password is set.
+    if $password {
+      fail "\$password supplied at the same time as \$unmanaged_password. Please decide what you really want!"
     }
 
   } else {
-    # If no password is supplied, generate on and set it in mysql and the
-    # .my.cnf file, but only once! We don't want the password to change
-    # on each puppet run!
 
-    $gen_password = generate('/usr/bin/pwgen', 20, 1)
+    if $password {
+      # If a password is supplied, set it in mysql and in the .my.cnf file
 
-    file { '/root/.my.cnf':
-      owner   => root,
-      group   => root,
-      mode    => '0600',
-      require => Exec['Initialize MySQL server root password'],
-    }
+      mysql_user { "${user}@localhost":
+        ensure        => present,
+        password_hash => mysql_password($password),
+        require       => File['/root/.my.cnf'],
+        alias         => 'mysql root',
+      }
 
-    exec { 'Initialize MySQL server root password':
-      unless  => 'test -f /root/.my.cnf',
-      command => "mysqladmin -u${user} password ${gen_password}",
-      notify  => Exec['Generate my.cnf'],
-      require => [Package['mysql-server'], Service['mysql']]
-    }
+      file { '/root/.my.cnf':
+        ensure  => present,
+        owner   => root,
+        group   => root,
+        mode    => '0600',
+        content => template('mysql/my.cnf.erb'),
+      }
+
+    } else {
+
+      # If no password is supplied, generate on and set it in mysql and the
+      # .my.cnf file, but only once! We don't want the password to change
+      # on each puppet run!
   
-    exec { "Generate my.cnf":
-      command     => "/bin/echo -e \"[mysql]\nuser=${user}\npassword=${gen_password}\n[mysqladmin]\nuser=${user}\npassword=${gen_password}\n[mysqldump]\nuser=${user}\npassword=${gen_password}\n[mysqlshow]\nuser=${user}\npassword=${gen_password}\n\" > /root/.my.cnf",
-      refreshonly => true,
-      creates     => "/root/.my.cnf",
+      $gen_password = generate('/usr/bin/pwgen', 20, 1)
+  
+      file { '/root/.my.cnf':
+        owner   => root,
+        group   => root,
+        mode    => '0600',
+        require => Exec['Initialize MySQL server root password'],
+      }
+  
+      exec { 'Initialize MySQL server root password':
+        unless  => 'test -f /root/.my.cnf',
+        command => "mysqladmin -u${user} password ${gen_password}",
+        notify  => Exec['Generate my.cnf'],
+        require => [Package['mysql-server'], Service['mysql']]
+      }
+    
+      exec { "Generate my.cnf":
+        command     => "/bin/echo -e \"[mysql]\nuser=${user}\npassword=${gen_password}\n[mysqladmin]\nuser=${user}\npassword=${gen_password}\n[mysqldump]\nuser=${user}\npassword=${gen_password}\n[mysqlshow]\nuser=${user}\npassword=${gen_password}\n\" > /root/.my.cnf",
+        refreshonly => true,
+        creates     => "/root/.my.cnf",
+      }
     }
   
   }
