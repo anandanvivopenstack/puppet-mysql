@@ -86,28 +86,35 @@ class mysql::server (
     require   => Package['mysql-server'],
   }
 
-  if $password {
-    # If a password is supplied, set it in mysql and in the .my.cnf file
+  if $unmanaged_password {
 
-    mysql_user { "${user}@localhost":
-      ensure        => present,
-      password_hash => mysql_password($password),
-      require       => File['/root/.my.cnf'],
-      alias         => 'mysql root',
-    }
-
-    file { '/root/.my.cnf':
-      ensure  => present,
-      owner   => root,
-      group   => root,
-      mode    => '0600',
-      content => template('mysql/my.cnf.erb'),
+    # We don't manage anything password related if $unmanaged_password is set.
+    if $password {
+      fail "\$password supplied at the same time as \$unmanaged_password. Please decide what you really want!"
     }
 
   } else {
 
-    # In some case, we do not want default password
-    if ! $unmanaged_password {
+    if $password {
+      # If a password is supplied, set it in mysql and in the .my.cnf file
+
+      mysql_user { "${user}@localhost":
+        ensure        => present,
+        password_hash => mysql_password($password),
+        require       => File['/root/.my.cnf'],
+        alias         => 'mysql root',
+      }
+
+      file { '/root/.my.cnf':
+        ensure  => present,
+        owner   => root,
+        group   => root,
+        mode    => '0600',
+        content => template('mysql/my.cnf.erb'),
+      }
+
+    } else {
+
       # If no password is supplied, generate on and set it in mysql and the
       # .my.cnf file, but only once! We don't want the password to change
       # on each puppet run!
