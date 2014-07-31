@@ -14,6 +14,7 @@ class mysql::server (
   $config_override = {},
   $logfile_group = $::mysql::params::logfile_group,
   $mycnf_group = 'root',
+  $mycnf_mode = '0644',
   $data_dir = '/var/lib/mysql',
   $backup_dir = '/var/backups/mysql',
   $user = 'root',
@@ -63,7 +64,7 @@ class mysql::server (
     path    => $mysql::params::mycnf,
     owner   => root,
     group   => $mycnf_group,
-    mode    => '0644',
+    mode    => $mycnf_mode,
     seltype => 'mysqld_etc_t',
     require => Package['mysql-server'],
   }
