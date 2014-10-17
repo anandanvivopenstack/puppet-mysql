@@ -7,6 +7,6 @@ describe 'mysql::server' do
     :osfamily            => 'Debian',
   }}
 
-  it { pending('rspec-puppet bug ?') { should compile.with_all_deps } }
+  it { should compile.with_all_deps }
 
 end

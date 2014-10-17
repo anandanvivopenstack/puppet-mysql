@@ -133,6 +133,7 @@ class mysql::server (
         unless  => 'test -f /root/.my.cnf',
         command => "mysqladmin -u${user} password ${gen_password}",
         notify  => Exec['Generate my.cnf'],
+        path    => '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin',
         require => [Package['mysql-server'], Service['mysql']]
       }
     
@@ -140,6 +141,7 @@ class mysql::server (
         command     => "/bin/echo -e \"[mysql]\nuser=${user}\npassword=${gen_password}\n[mysqladmin]\nuser=${user}\npassword=${gen_password}\n[mysqldump]\nuser=${user}\npassword=${gen_password}\n[mysqlshow]\nuser=${user}\npassword=${gen_password}\n\" > /root/.my.cnf",
         refreshonly => true,
         creates     => "/root/.my.cnf",
+        path        => '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin',
       }
     }
   
