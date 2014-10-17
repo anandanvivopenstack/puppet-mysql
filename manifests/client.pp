@@ -6,12 +6,14 @@
 #
 class mysql::client {
 
+  $pkg_name = $::osfamily ? {
+    'Debian' => 'mysql-client',
+    'RedHat' => 'mysql',
+  }
+
   package { 'mysql-client':
     ensure => present,
-    name   => $::osfamily ? {
-      'Debian' => 'mysql-client',
-      'RedHat' => 'mysql',
-    },
+    name   => $pkg_name,
   }
 
 }

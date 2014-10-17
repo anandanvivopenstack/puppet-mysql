@@ -19,9 +19,16 @@
 # - *$host*: target host, default to "localhost"
 # - *$priv*: target privileges, defaults to "all" (values are the fieldnames from mysql.db table).
 #
-define mysql::rights($database, $user, $password, $host="localhost", $ensure="present", $priv="all") {
+define mysql::rights(
+  $database,
+  $user,
+  $password,
+  $host   = 'localhost',
+  $ensure = 'present',
+  $priv   = 'all',
+) {
 
-  if $ensure == "present" {
+  if $ensure == 'present' {
     if ! defined(Mysql_user ["${user}@${host}"]) {
       mysql_user { "${user}@${host}":
         password_hash => mysql_password($password),

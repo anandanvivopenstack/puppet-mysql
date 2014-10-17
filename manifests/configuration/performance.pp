@@ -102,7 +102,7 @@ class mysql::configuration::performance {
     'default': {
       $config = {}
     }
-    default: { fail "Undefined performance level" }
+    default: { fail 'Undefined performance level' }
   }
     
 }

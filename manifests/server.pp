@@ -77,14 +77,15 @@ class mysql::server (
     false => true,
     true  => false,
   }
+  $service_name = $::osfamily ? {
+    'RedHat' => 'mysqld',
+    default  => 'mysql',
+  }
   service { 'mysql':
-    ensure      => $service_ensure,
-    enable      => $service_enable,
-    name        => $::osfamily ? {
-      'RedHat' => 'mysqld',
-      default  => 'mysql',
-    },
-    require   => Package['mysql-server'],
+    ensure  => $service_ensure,
+    enable  => $service_enable,
+    name    => $service_name,
+    require => Package['mysql-server'],
   }
 
   if $unmanaged_password {
@@ -137,35 +138,37 @@ class mysql::server (
         require => [Package['mysql-server'], Service['mysql']]
       }
     
-      exec { "Generate my.cnf":
+      exec { 'Generate my.cnf':
         command     => "/bin/echo -e \"[mysql]\nuser=${user}\npassword=${gen_password}\n[mysqladmin]\nuser=${user}\npassword=${gen_password}\n[mysqldump]\nuser=${user}\npassword=${gen_password}\n[mysqlshow]\nuser=${user}\npassword=${gen_password}\n\" > /root/.my.cnf",
         refreshonly => true,
-        creates     => "/root/.my.cnf",
+        creates     => '/root/.my.cnf',
         path        => '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin',
       }
     }
   
   }
 
+  $file_content = $::osfamily ? {
+    'RedHat' => template('mysql/logrotate.redhat.erb'),
+    'Debian' => template('mysql/logrotate.debian.erb'),
+    default  => undef,
+  }
   file { '/etc/logrotate.d/mysql-server':
-    ensure => present,
-    content => $::osfamily ? {
-      'RedHat' => template('mysql/logrotate.redhat.erb'),
-      'Debian' => template('mysql/logrotate.debian.erb'),
-      default  => undef,
-    }
+    ensure  => present,
+    content => $file_content,
   }
 
+  $file_path = $::osfamily ? {
+    'RedHat' => '/var/log/mysql-slow-queries.log',
+    default  => '/var/log/mysql/mysql-slow-queries.log',
+  }
   file { 'mysql-slow-queries.log':
     ensure  => present,
     owner   => mysql,
     group   => mysql,
     mode    => '0640',
     seltype => mysqld_log_t,
-    path    => $::osfamily ? {
-      'RedHat' => '/var/log/mysql-slow-queries.log',
-      default  => '/var/log/mysql/mysql-slow-queries.log',
-    };
+    path    => $file_path,
   }
 
 }
