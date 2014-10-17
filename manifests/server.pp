@@ -88,14 +88,7 @@ class mysql::server (
     require => Package['mysql-server'],
   }
 
-  if $unmanaged_password {
-
-    # We don't manage anything password related if $unmanaged_password is set.
-    if $password {
-      fail "\$password supplied at the same time as \$unmanaged_password. Please decide what you really want!"
-    }
-
-  } else {
+  if ! $unmanaged_password {
 
     if $password {
       # If a password is supplied, set it in mysql and in the .my.cnf file
