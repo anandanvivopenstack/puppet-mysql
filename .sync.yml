@@ -1,0 +1,5 @@
+---
+.travis.yml:
+  secure_global_env:
+    # PUBLISHER_PASSWORD
+    - "IhX8CFO0Op3mrEIBiBJyEz2QcTpn4mcO4j2YeWqpZVYeMzSNDqEHKIBXx1wmGDi5XRw2m9Lxlt/ptMyOherLpiMRoU/Hxv0V3JZ/nvXSixup4+m3/vkrRRplTxX9kf4fFiIoEdQsqbFuY8/G5pPqRtQyXdiEv2mm0fuhzrCw0Ww="
