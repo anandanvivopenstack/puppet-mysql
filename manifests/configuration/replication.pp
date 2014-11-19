@@ -47,7 +47,7 @@ class mysql::configuration::replication {
       # RHEL6+, Debian6+
       case $::operatingsystem {
         Debian,RedHat,Centos: {
-          if $::lsbmajdistrelease >= '6' {
+          if $::operatingsystemmajrelease >= '6' {
             $repl_slave_config = merge($repl_slave_base_config, {
               'binlog_format' => { value => $::mysql::server::replication_binlog_format },
             })
