@@ -114,7 +114,7 @@ class mysql::server (
       # .my.cnf file, but only once! We don't want the password to change
       # on each puppet run!
   
-      $gen_password = generate('/usr/bin/pwgen', 20, 1)
+      $gen_password = inline_template('<%=(0...20).map { [("a".."z"), ("A".."Z")].map { |i| i.to_a }.flatten[rand(52)] }.join%>')
   
       file { '/root/.my.cnf':
         owner   => root,
