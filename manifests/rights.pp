@@ -29,7 +29,7 @@ define mysql::rights(
 ) {
 
   if $ensure == 'present' {
-    if ! defined(Mysql_user ["${user}@${host}"]) {
+    if ! defined(Mysql_user["${user}@${host}"]) {
       mysql_user { "${user}@${host}":
         password_hash => mysql_password($password),
       }
