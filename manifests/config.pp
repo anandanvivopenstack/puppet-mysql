@@ -36,11 +36,11 @@ define mysql::config (
     end %>")
 
   case $ensure {
-    present: {
+    'present': {
       $changes = "set target[.='${section}']/${real_key} ${value}"
     }
 
-    absent: {
+    'absent': {
       $changes = "rm target[.='${section}']/${real_key}"
     }
 

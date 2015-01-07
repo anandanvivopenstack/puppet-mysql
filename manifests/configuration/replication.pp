@@ -46,7 +46,7 @@ class mysql::configuration::replication {
       # binlog_format comes with MySQL 5.1+
       # RHEL6+, Debian6+
       case $::operatingsystem {
-        Debian,RedHat,Centos: {
+        'Debian','RedHat','Centos': {
           if $::operatingsystemmajrelease >= '6' {
             $repl_slave_config = merge($repl_slave_base_config, {
               'binlog_format' => { value => $::mysql::server::replication_binlog_format },
