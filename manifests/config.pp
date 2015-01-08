@@ -17,13 +17,15 @@
 # it defaults to 'mysqld/'.
 #
 define mysql::config (
-  $ensure='present',
-  $value='',
-  $key=''
+  $ensure = 'present',
+  # lint:ignore:empty_string_assignment
+  $value  = '',
+  # lint:endignore
+  $key    = undef,
 ) {
 
   $real_name = $key ? {
-    ''      => $name,
+    undef   => $name,
     default => $key,
   }
 
