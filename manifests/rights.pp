@@ -35,8 +35,10 @@ define mysql::rights(
       }
     }
 
-    mysql_grant { "${user}@${host}/${database}":
+    mysql_grant { "${user}@${host}/${database}.*":
       privileges => $priv,
+      user       => "${user}@${host}",
+      table      => "${database}.*",
     }
   }
 
