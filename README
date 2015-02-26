@@ -11,7 +11,7 @@ mysql::rights{"Set rights for puppet database":
   password => "puppet"
 }
 
-mysql::database{"mydb":
+mysql_database{"mydb":
   ensure   => present
 }
 
