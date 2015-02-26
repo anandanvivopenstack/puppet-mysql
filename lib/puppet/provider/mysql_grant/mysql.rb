@@ -1,164 +1,148 @@
-# -*- tab-width: 4; ruby-indent-level: 4; indent-tabs-mode: t -*-
-# A grant is either global or per-db. This can be distinguished by the syntax
-# of the name:
-# 	user@host => global
-# 	user@host/db => per-db
+require File.expand_path(File.join(File.dirname(__FILE__), '..', 'mysql'))
+Puppet::Type.type(:mysql_grant).provide(:mysql, :parent => Puppet::Provider::Mysql) do
 
-require 'puppet/provider/package'
+  desc 'Set grants for users in MySQL.'
 
-MYSQL_USER_PRIVS = [ :select_priv, :insert_priv, :update_priv, :delete_priv,
-	:create_priv, :drop_priv, :reload_priv, :shutdown_priv, :process_priv,
-	:file_priv, :grant_priv, :references_priv, :index_priv, :alter_priv,
-	:show_db_priv, :super_priv, :create_tmp_table_priv, :lock_tables_priv,
-	:execute_priv, :repl_slave_priv, :repl_client_priv, :create_view_priv,
-	:show_view_priv, :create_routine_priv, :alter_routine_priv,
-	:create_user_priv
-]
+  def self.instances
+    instances = []
+    users.select{ |user| user =~ /.+@/ }.collect do |user|
+      user_string = self.cmd_user(user)
+      query = "SHOW GRANTS FOR #{user_string};"
+      begin
+        grants = mysql([defaults_file, "-NBe", query].compact)
+      rescue Puppet::ExecutionFailure => e
+        # Silently ignore users with no grants. Can happen e.g. if user is
+        # defined with fqdn and server is run with skip-name-resolve. Example:
+        # Default root user created by mysql_install_db on a host with fqdn
+        # of myhost.mydomain.my: root@myhost.mydomain.my, when MySQL is started
+        # with --skip-name-resolve.
+        if e.inspect =~ /There is no such grant defined for user/
+          next
+        else
+          raise Puppet::Error, "#mysql had an error ->  #{e.inspect}"
+        end
+      end
+      # Once we have the list of grants generate entries for each.
+      grants.each_line do |grant|
+        # Match the munges we do in the type.
+        munged_grant = grant.delete("'").delete("`")
+        # Matching: GRANT (SELECT, UPDATE) PRIVILEGES ON (*.*) TO ('root')@('127.0.0.1') (WITH GRANT OPTION)
+        if match = munged_grant.match(/^GRANT\s(.+)\sON\s(.+)\sTO\s(.*)@(.*?)(\s.*)?$/)
+          privileges, table, user, host, rest = match.captures
+          table.gsub!('\\\\', '\\')
 
-MYSQL_DB_PRIVS = [ :select_priv, :insert_priv, :update_priv, :delete_priv,
-	:create_priv, :drop_priv, :grant_priv, :references_priv, :index_priv,
-	:alter_priv, :create_tmp_table_priv, :lock_tables_priv, :create_view_priv,
-	:show_view_priv, :create_routine_priv, :alter_routine_priv, :execute_priv
-]
+          # split on ',' if it is not a non-'('-containing string followed by a
+          # closing parenthesis ')'-char - e.g. only split comma separated elements not in
+          # parentheses
+          stripped_privileges = privileges.strip.split(/\s*,\s*(?![^(]*\))/).map do |priv|
+            # split and sort the column_privileges in the parentheses and rejoin
+            if priv.include?('(')
+              type, col=priv.strip.split(/\s+|\b/,2)
+              type.upcase + " (" + col.slice(1...-1).strip.split(/\s*,\s*/).sort.join(', ') + ")"
+            else
+              # Once we split privileges up on the , we need to make sure we
+              # shortern ALL PRIVILEGES to just all.
+              priv == 'ALL PRIVILEGES' ? 'ALL' : priv.strip
+            end
+          end
+          # Same here, but to remove OPTION leaving just GRANT.
+          options = ['GRANT'] if rest.match(/WITH\sGRANT\sOPTION/)
+          # fix double backslash that MySQL prints, so resources match
+          table.gsub!("\\\\", "\\")
+          # We need to return an array of instances so capture these
+          instances << new(
+              :name       => "#{user}@#{host}/#{table}",
+              :ensure     => :present,
+              :privileges => stripped_privileges.sort,
+              :table      => table,
+              :user       => "#{user}@#{host}",
+              :options    => options
+          )
+        end
+      end
+    end
+    return instances
+  end
 
-Puppet::Type.type(:mysql_grant).provide(:mysql) do
+  def self.prefetch(resources)
+    users = instances
+    resources.keys.each do |name|
+      if provider = users.find { |user| user.name == name }
+        resources[name].provider = provider
+      end
+    end
+  end
 
-	desc "Uses mysql as database."
+  def grant(user, table, privileges, options)
+    user_string = self.class.cmd_user(user)
+    priv_string = self.class.cmd_privs(privileges)
+    table_string = self.class.cmd_table(table)
+    query = "GRANT #{priv_string}"
+    query << " ON #{table_string}"
+    query << " TO #{user_string}"
+    query << self.class.cmd_options(options) unless options.nil?
+    mysql([defaults_file, '-e', query].compact)
+  end
 
-	# this is a bit of a hack.
-	# Since puppet evaluates what provider to use at start time rather than run time
-	# we can't specify that commands will exist. Instead we call manually.
-	# I would make these call execute directly, but execpipe needs the path
-	def mysqladmin
-		'/usr/bin/mysqladmin'
-	end
-	def mysql
-		'/usr/bin/mysql'
-	end
+  def create
+    grant(@resource[:user], @resource[:table], @resource[:privileges], @resource[:options])
 
-	def mysql_flush 
-		execute([mysqladmin, "--defaults-extra-file=/root/.my.cnf", "flush-privileges"])
-	end
+    @property_hash[:ensure]     = :present
+    @property_hash[:table]      = @resource[:table]
+    @property_hash[:user]       = @resource[:user]
+    @property_hash[:options]    = @resource[:options] if @resource[:options]
+    @property_hash[:privileges] = @resource[:privileges]
 
-	# this parses the
-	def split_name(string)
-		matches = /^([^@]*)@([^\/]*)(\/(.*))?$/.match(string).captures.compact
-		case matches.length 
-			when 2
-				{
-					:type => :user,
-					:user => matches[0],
-					:host => matches[1]
-				}
-			when 4
-				{
-					:type => :db,
-					:user => matches[0],
-					:host => matches[1],
-					:db => matches[3]
-				}
-		end
-	end
+    exists? ? (return true) : (return false)
+  end
 
-	def create_row
-		unless @resource.should(:privileges).empty?
-			name = split_name(@resource[:name])
-			case name[:type]
-			when :user
-				execute [mysql, "--defaults-extra-file=/root/.my.cnf", "mysql", "-e", "INSERT INTO user (host, user) VALUES ('%s', '%s')" % [
-					name[:host], name[:user],
-				]]
-			when :db
-				execute [mysql, "--defaults-extra-file=/root/.my.cnf", "mysql", "-e", "INSERT INTO db (host, user, db) VALUES ('%s', '%s', '%s')" % [
-					name[:host], name[:user], name[:db],
-				]]
-			end
-			mysql_flush
-		end
-	end
+  def revoke(user, table)
+    user_string = self.class.cmd_user(user)
+    table_string = self.class.cmd_table(table)
 
-	def destroy
-		execute [mysql, "--defaults-extra-file=/root/.my.cnf", "mysql", "-e", "REVOKE ALL ON '%s'.* FROM '%s@%s'" % [ @resource[:privileges], @resource[:database], @resource[:name], @resource[:host] ]]
-	end
-	
-	def row_exists?
-		name = split_name(@resource[:name])
-		fields = [:user, :host]
-		if name[:type] == :db
-			fields << :db
-		end
-		not execute([mysql, "--defaults-extra-file=/root/.my.cnf", "mysql", "-NBe", 'SELECT "1" FROM %s WHERE %s' % [ name[:type], fields.map do |f| "%s = '%s'" % [f, name[f]] end.join(' AND ')]]).empty?
-	end
+    # revoke grant option needs to be a extra query, because
+    # "REVOKE ALL PRIVILEGES, GRANT OPTION [..]" is only valid mysql syntax
+    # if no ON clause is used.
+    # It hast to be executed before "REVOKE ALL [..]" since a GRANT has to
+    # exist to be executed successfully
+    query = "REVOKE GRANT OPTION ON #{table_string} FROM #{user_string}"
+    mysql([defaults_file, '-e', query].compact)
+    query = "REVOKE ALL ON #{table_string} FROM #{user_string}"
+    mysql([defaults_file, '-e', query].compact)
+  end
 
-	def all_privs_set?
-		all_privs = case split_name(@resource[:name])[:type]
-			when :user
-				MYSQL_USER_PRIVS
-			when :db
-				MYSQL_DB_PRIVS
-		end
-		all_privs = all_privs.collect do |p| p.to_s end.sort.join("|")
-		privs = privileges.collect do |p| p.to_s end.sort.join("|")
+  def destroy
+    revoke(@property_hash[:user], @property_hash[:table])
+    @property_hash.clear
 
-		all_privs == privs
-	end
+    exists? ? (return false) : (return true)
+  end
 
-	def privileges 
-		name = split_name(@resource[:name])
-		privs = ""
+  def exists?
+    @property_hash[:ensure] == :present || false
+  end
 
-		case name[:type]
-		when :user
-			privs = execute [mysql, "--defaults-extra-file=/root/.my.cnf", "mysql", "-Be", 'select * from user where user="%s" and host="%s"' % [ name[:user], name[:host] ]]
-		when :db
-			privs = execute [mysql, "--defaults-extra-file=/root/.my.cnf", "mysql", "-Be", 'select * from db where user="%s" and host="%s" and db="%s"' % [ name[:user], name[:host], name[:db] ]]
-		end
+  def flush
+    @property_hash.clear
+    mysql([defaults_file, '-NBe', 'FLUSH PRIVILEGES'].compact)
+  end
 
-		if privs.match(/^$/) 
-			privs = [] # no result, no privs
-		else
-			# returns a line with field names and a line with values, each tab-separated
-			privs = privs.split(/\n/).map! do |l| l.chomp.split(/\t/) end
-			# transpose the lines, so we have key/value pairs
-			privs = privs[0].zip(privs[1])
-			privs = privs.select do |p| p[0].match(/_priv$/) and p[1] == 'Y' end
-		end
+  mk_resource_methods
 
-		privs.collect do |p| (p[0].downcase).intern end
-	end
+  def privileges=(privileges)
+    revoke(@property_hash[:user], @property_hash[:table])
+    grant(@property_hash[:user], @property_hash[:table], privileges, @property_hash[:options])
+    @property_hash[:privileges] = privileges
 
-	def privileges=(privs) 
-		unless row_exists?
-			create_row
-		end
+    self.privileges
+  end
 
-		# puts "Setting privs: ", privs.join(", ")
-		name = split_name(@resource[:name])
-		stmt = ''
-		where = ''
-		all_privs = []
-		case name[:type]
-		when :user
-			stmt = 'update user set '
-			where = ' where user="%s" and host="%s"' % [ name[:user], name[:host] ]
-			all_privs = MYSQL_USER_PRIVS
-		when :db
-			stmt = 'update db set '
-			where = ' where user="%s" and host="%s"' % [ name[:user], name[:host] ]
-			all_privs = MYSQL_DB_PRIVS
-		end
+  def options=(options)
+    revoke(@property_hash[:user], @property_hash[:table])
+    grant(@property_hash[:user], @property_hash[:table], @property_hash[:privileges], options)
+    @property_hash[:options] = options
 
-		if privs[0] == :all 
-			privs = all_privs
-		end
-	
-		# puts "stmt:", stmt
-		set = all_privs.collect do |p| "%s = '%s'" % [p, privs.include?(p) ? 'Y' : 'N'] end.join(', ')
-		# puts "set:", set
-		stmt = stmt << set << where
+    self.options
+  end
 
-		execute [mysql, "--defaults-extra-file=/root/.my.cnf", "mysql", "-Be", stmt]
-		mysql_flush
-	end
 end
-

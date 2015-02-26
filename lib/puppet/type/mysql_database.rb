@@ -1,19 +1,24 @@
-# -*- tab-width: 4; ruby-indent-level: 4; indent-tabs-mode: t -*-
-# This has to be a separate type to enable collecting
 Puppet::Type.newtype(:mysql_database) do
-	@doc = "Manage a database."
-	ensurable
-	newparam(:name) do
-		desc "The name of the database."
+  @doc = 'Manage MySQL databases.'
 
-		# TODO: only [[:alnum:]_] allowed
-	end
+  ensurable
 
-	autorequire(:service) do
-		["mysql"]
-	end
-	autorequire(:mysql_user) do
-		["mysql root"]
-	end
+  autorequire(:file) { '/root/.my.cnf' }
+
+  newparam(:name, :namevar => true) do
+    desc 'The name of the MySQL database to manage.'
+  end
+
+  newproperty(:charset) do
+    desc 'The CHARACTER SET setting for the database'
+    defaultto :utf8
+    newvalue(/^\S+$/)
+  end
+
+  newproperty(:collate) do
+    desc 'The COLLATE setting for the database'
+    defaultto :utf8_general_ci
+    newvalue(/^\S+$/)
+  end
+
 end
-
