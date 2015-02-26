@@ -67,7 +67,7 @@ class mysql::server (
   }
 
   file { '/etc/mysql/my.cnf':
-    ensure  => present,
+    ensure  => file,
     path    => $config_file,
     owner   => root,
     group   => $mycnf_group,
@@ -108,7 +108,7 @@ class mysql::server (
       }
 
       file { '/root/.my.cnf':
-        ensure  => present,
+        ensure  => file,
         owner   => root,
         group   => root,
         mode    => '0600',
@@ -135,7 +135,7 @@ class mysql::server (
         command => "mysqladmin -u${user} password ${gen_password}",
         notify  => Exec['Generate my.cnf'],
         path    => '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin',
-        require => [Package['mysql-server'], Service['mysql']]
+        require => [Package['mysql-server'], Service['mysql']],
       }
     
       exec { 'Generate my.cnf':
@@ -154,7 +154,7 @@ class mysql::server (
     default  => undef,
   }
   file { '/etc/logrotate.d/mysql-server':
-    ensure  => present,
+    ensure  => file,
     content => $file_content,
   }
 
@@ -163,7 +163,7 @@ class mysql::server (
     default  => '/var/log/mysql/mysql-slow-queries.log',
   }
   file { 'mysql-slow-queries.log':
-    ensure  => present,
+    ensure  => file,
     owner   => mysql,
     group   => mysql,
     mode    => '0640',

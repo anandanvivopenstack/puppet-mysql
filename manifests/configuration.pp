@@ -1,18 +1,18 @@
 class mysql::configuration {
 
-  include mysql::configuration::performance
+  include ::mysql::configuration::performance
   $performance_config = $::mysql::configuration::performance::config
 
-  include mysql::configuration::replication
+  include ::mysql::configuration::replication
   $replication_config = $::mysql::configuration::replication::config
 
-  include mysql::configuration::client
+  include ::mysql::configuration::client
   $client_config = $::mysql::configuration::client::config
 
-  include mysql::configuration::mysqld
+  include ::mysql::configuration::mysqld
   $mysqld_config = $::mysql::configuration::mysqld::config
 
-  include mysql::configuration::mysqld_safe
+  include ::mysql::configuration::mysqld_safe
   $mysqld_safe_config = $::mysql::configuration::mysqld_safe::config
 
   $config = merge($performance_config,
