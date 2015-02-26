@@ -52,7 +52,7 @@ define mysql::config (
   include ::mysql::params
 
   augeas { "my.cnf/${section}/${name}":
-    incl    => $mysql::params::mycnf,
+    incl    => $::mysql::server::config_file,
     lens    => 'MySQL.lns',
     changes => [
       "set target[.='${section}'] ${section}",
@@ -60,7 +60,7 @@ define mysql::config (
       'rm target[count(*)=0]',
       ],
     require => [
-      File[$mysql::params::mycnf],
+      File[$mysql::server::config_file],
       File[$mysql::server::data_dir],
       ],
     notify  => Service['mysql'],

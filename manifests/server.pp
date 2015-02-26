@@ -11,8 +11,15 @@
 #
 class mysql::server (
   $performance = 'default',
+  $config_file = $::osfamily ? {
+    'Debian' => '/etc/mysql/my.cnf',
+    'RedHat' => '/etc/my.cnf',
+  },
   $config_override = {},
-  $logfile_group = $::mysql::params::logfile_group,
+  $logfile_group = $::osfamily ? {
+    'Debian' => 'adm',
+    'RedHat' => 'mysql',
+  },
   $mycnf_group = 'root',
   $mycnf_mode = '0644',
   $data_dir = '/var/lib/mysql',
@@ -61,7 +68,7 @@ class mysql::server (
 
   file { '/etc/mysql/my.cnf':
     ensure  => present,
-    path    => $mysql::params::mycnf,
+    path    => $config_file,
     owner   => root,
     group   => $mycnf_group,
     mode    => $mycnf_mode,
