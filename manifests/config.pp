@@ -60,7 +60,7 @@ define mysql::config (
       'rm target[count(*)=0]',
       ],
     require => [
-      File[$mysql::server::config_file],
+      File['/etc/mysql/my.cnf'],
       File[$mysql::server::data_dir],
       ],
     notify  => Service['mysql'],
