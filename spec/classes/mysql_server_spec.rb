@@ -2,11 +2,14 @@ require 'spec_helper'
 
 describe 'mysql::server' do
 
-  let(:facts) {{
-    :operatingsystem     => 'Debian',
-    :osfamily            => 'Debian',
-  }}
+  on_supported_os.each do |os, facts|
+    context "on #{os}" do
+      let(:facts) do
+        facts
+      end
 
-  it { should compile.with_all_deps }
+      it { should compile.with_all_deps }
 
+    end
+  end
 end
