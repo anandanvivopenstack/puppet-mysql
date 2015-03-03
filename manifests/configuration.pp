@@ -15,10 +15,12 @@ class mysql::configuration {
     },
   }
 
-  $config = merge($client_config,
-                  $mysqld_config,
-                  $mysqld_safe_config,
-                  $::mysql::server::config_override)
+  $config = mysql_deep_merge(
+    $client_config,
+    $mysqld_config,
+    $mysqld_safe_config,
+    $::mysql::server::config_override
+  )
 
   create_resources(
     augeas,
