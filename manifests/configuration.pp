@@ -1,8 +1,5 @@
 class mysql::configuration {
 
-  include ::mysql::configuration::client
-  $client_config = $::mysql::configuration::client::config
-
   include ::mysql::configuration::mysqld
   $mysqld_config = $::mysql::configuration::mysqld::config
 
@@ -16,6 +13,15 @@ class mysql::configuration {
     'mysqld/master-user'     => { ensure => absent },
     'mysqld/master-password' => { ensure => absent },
     'mysqld/report-host'     => { ensure => absent },
+  }
+
+  $client_config = {
+    'client/socket' => {
+      value => $::osfamily ? {
+        'RedHat' => '/var/lib/mysql/mysql.sock',
+        default  => '/var/run/mysqld/mysqld.sock',
+      },
+    },
   }
 
   $config = merge($replication_config,
