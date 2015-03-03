@@ -15,7 +15,7 @@ class mysql::configuration {
     },
   }
 
-  $config = mysql_deep_merge(
+  $config = mysql_deepmerge(
     $client_config,
     $mysqld_config,
     $mysqld_safe_config,
