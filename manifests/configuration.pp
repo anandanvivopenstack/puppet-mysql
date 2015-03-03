@@ -19,7 +19,7 @@ class mysql::configuration {
     $client_config,
     $mysqld_config,
     $mysqld_safe_config,
-    $::mysql::server::config_override
+    $::mysql::server::override_options
   )
 
   create_resources(
