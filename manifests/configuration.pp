@@ -1,8 +1,5 @@
 class mysql::configuration {
 
-  include ::mysql::configuration::performance
-  $performance_config = $::mysql::configuration::performance::config
-
   include ::mysql::configuration::replication
   $replication_config = $::mysql::configuration::replication::config
 
@@ -15,8 +12,7 @@ class mysql::configuration {
   include ::mysql::configuration::mysqld_safe
   $mysqld_safe_config = $::mysql::configuration::mysqld_safe::config
 
-  $config = merge($performance_config,
-                  $replication_config,
+  $config = merge($replication_config,
                   $client_config,
                   $mysqld_config,
                   $mysqld_safe_config,

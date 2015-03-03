@@ -10,12 +10,11 @@
 #    creates a special user used by the init scripts.
 #
 class mysql::server (
-  $performance = 'default',
   $config_file = $::osfamily ? {
     'Debian' => '/etc/mysql/my.cnf',
     'RedHat' => '/etc/my.cnf',
   },
-  $config_override = {},
+  $override_options = {},
   $logfile_group = $::osfamily ? {
     'Debian' => 'adm',
     'RedHat' => 'mysql',
