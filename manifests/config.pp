@@ -49,7 +49,7 @@ define mysql::config (
     default: { err ( "unknown ensure value ${ensure}" ) }
   }
 
-  augeas { "my.cnf/${section}/${name}":
+  augeas { "my.cnf/${section}/${real_key}":
     incl    => $::mysql::server::config_file,
     lens    => 'MySQL.lns',
     changes => [
