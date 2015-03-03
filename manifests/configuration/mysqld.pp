@@ -14,14 +14,14 @@ class mysql::configuration::mysqld {
   }
 
   $config = {
-    'pid-file'             => { value => '/var/run/mysqld/mysqld.pid' },
-    'old_passwords'        => { value => '0' },
-    'character-set-server' => { value => 'utf8' },
-    'log-warnings'         => { value => '1' },
-    'datadir'              => { value => $::mysql::server::data_dir },
-    'log-error'            => { value => $log_error },
-    'log-slow-queries'     => { value => $log_slow_queries },
-    'socket'               => { value => $socket },
+    'mysqld/pid-file'             => { value => '/var/run/mysqld/mysqld.pid' },
+    'mysqld/old_passwords'        => { value => '0' },
+    'mysqld/character-set-server' => { value => 'utf8' },
+    'mysqld/log-warnings'         => { value => '1' },
+    'mysqld/datadir'              => { value => $::mysql::server::data_dir },
+    'mysqld/log-error'            => { value => $log_error },
+    'mysqld/log-slow-queries'     => { value => $log_slow_queries },
+    'mysqld/socket'               => { value => $socket },
   }
 
 }
