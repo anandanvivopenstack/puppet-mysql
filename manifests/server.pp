@@ -28,12 +28,6 @@ class mysql::server (
   $unmanaged_config = false,
   $unmanaged_service = false,
   $unmanaged_password = false,
-  $replication = 'NONE',
-  $replication_serverid = undef,
-  $replication_masterhost = undef,
-  $replication_masteruser = undef,
-  $replication_masterpw = undef,
-  $replication_binlog_format = 'STATEMENT',
 ) inherits mysql::params {
 
   if ! $unmanaged_config {
