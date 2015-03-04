@@ -6,7 +6,7 @@ class mysql::server (
   },
   $override_options = {},
   $user = 'root',
-  $password = undef,
+  $root_password = undef,
   $manage_config_file = true,
   $service_manage = true,
   $unmanaged_password = false,
@@ -100,12 +100,12 @@ class mysql::server (
 
   if ! $unmanaged_password {
 
-    if $password {
+    if $root_password {
       # If a password is supplied, set it in mysql and in the .my.cnf file
 
       mysql_user { "${user}@localhost":
         ensure        => present,
-        password_hash => mysql_password($password),
+        password_hash => mysql_password($root_password),
         require       => File['/root/.my.cnf'],
         alias         => 'mysql root',
       }

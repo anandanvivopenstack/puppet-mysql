@@ -1,16 +1,16 @@
 # file managed by puppet
 [mysqldump]
 user = <%= @user %>
-password = <%= @password %>
+password = <%= @root_password %>
 
 [mysql]
 user = <%= @user %>
-password = <%= @password %>
+password = <%= @root_password %>
 
 [mysqladmin]
 user = <%= @user %>
-password = <%= @password %>
+password = <%= @root_password %>
 
 [client]
 user = <%= @user %>
-password = <%= @password %>
+password = <%= @root_password %>
