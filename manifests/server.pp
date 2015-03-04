@@ -5,7 +5,6 @@ class mysql::server (
     'RedHat' => '/etc/my.cnf',
   },
   $override_options = {},
-  $user = 'root',
   $root_password = undef,
   $manage_config_file = true,
   $service_manage = true,
@@ -103,7 +102,7 @@ class mysql::server (
     if $root_password {
       # If a password is supplied, set it in mysql and in the .my.cnf file
 
-      mysql_user { "${user}@localhost":
+      mysql_user { 'root@localhost':
         ensure        => present,
         password_hash => mysql_password($root_password),
         require       => File['/root/.my.cnf'],
@@ -135,14 +134,14 @@ class mysql::server (
   
       exec { 'Initialize MySQL server root password':
         unless  => 'test -f /root/.my.cnf',
-        command => "mysqladmin -u${user} password ${gen_password}",
+        command => "mysqladmin -uroot password ${gen_password}",
         notify  => Exec['Generate my.cnf'],
         path    => '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin',
         require => [Package['mysql-server'], Service['mysql']],
       }
     
       exec { 'Generate my.cnf':
-        command     => "/bin/echo -e \"[mysql]\nuser=${user}\npassword=${gen_password}\n[mysqladmin]\nuser=${user}\npassword=${gen_password}\n[mysqldump]\nuser=${user}\npassword=${gen_password}\n[mysqlshow]\nuser=${user}\npassword=${gen_password}\n\" > /root/.my.cnf",
+        command     => "/bin/echo -e \"[mysql]\nuser=root\npassword=${gen_password}\n[mysqladmin]\nuser=root\npassword=${gen_password}\n[mysqldump]\nuser=root\npassword=${gen_password}\n[mysqlshow]\nuser=root\npassword=${gen_password}\n\" > /root/.my.cnf",
         refreshonly => true,
         creates     => '/root/.my.cnf',
         path        => '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin',
