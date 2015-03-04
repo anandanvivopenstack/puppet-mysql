@@ -8,7 +8,7 @@ class mysql::server (
   $user = 'root',
   $password = undef,
   $manage_config_file = true,
-  $unmanaged_service = false,
+  $service_manage = true,
   $unmanaged_password = false,
 ) inherits mysql::params {
 
@@ -83,13 +83,9 @@ class mysql::server (
     }
   }
 
-  $service_ensure = $unmanaged_service ? {
-    false => 'running',
-    true  => undef,
-  }
-  $service_enable = $unmanaged_service ? {
-    false => true,
-    true  => false,
+  $service_ensure = $service_manage ? {
+    true  => 'running',
+    false => undef,
   }
   $service_name = $::osfamily ? {
     'RedHat' => 'mysqld',
@@ -97,7 +93,7 @@ class mysql::server (
   }
   service { 'mysql':
     ensure  => $service_ensure,
-    enable  => $service_enable,
+    enable  => $service_manage,
     name    => $service_name,
     require => Package['mysql-server'],
   }
