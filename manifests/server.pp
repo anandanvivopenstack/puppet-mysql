@@ -8,7 +8,7 @@ class mysql::server (
   $root_password = undef,
   $manage_config_file = true,
   $service_manage = true,
-  $unmanaged_password = false,
+  $create_root_user = true,
 ) inherits mysql::params {
 
   # TODO: use params
@@ -97,7 +97,7 @@ class mysql::server (
     require => Package['mysql-server'],
   }
 
-  if ! $unmanaged_password {
+  if $create_root_user {
 
     if $root_password {
       # If a password is supplied, set it in mysql and in the .my.cnf file
