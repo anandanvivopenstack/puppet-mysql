@@ -7,7 +7,7 @@ class mysql::server (
   $override_options = {},
   $user = 'root',
   $password = undef,
-  $unmanaged_config = false,
+  $manage_config_file = true,
   $unmanaged_service = false,
   $unmanaged_password = false,
 ) inherits mysql::params {
@@ -32,7 +32,7 @@ class mysql::server (
   $data_dir = $options['mysqld']['datadir']
   # END TODO
 
-  if ! $unmanaged_config {
+  if $manage_config_file {
     create_resources(
       'augeas',
       mysql_options_to_augeas($options),
