@@ -49,6 +49,16 @@ class mysql::server (
         notify => Service['mysql'],
       }
     )
+
+    file { '/etc/mysql/my.cnf':
+      ensure  => file,
+      path    => $config_file,
+      owner   => 'root',
+      group   => $mycnf_group,
+      mode    => $mycnf_mode,
+      seltype => 'mysqld_etc_t',
+      require => Package['mysql-server'],
+    }
   }
 
   user { 'mysql':
@@ -74,16 +84,6 @@ class mysql::server (
       recurse => true,
       replace => false,
     }
-  }
-
-  file { '/etc/mysql/my.cnf':
-    ensure  => file,
-    path    => $config_file,
-    owner   => root,
-    group   => $mycnf_group,
-    mode    => $mycnf_mode,
-    seltype => 'mysqld_etc_t',
-    require => Package['mysql-server'],
   }
 
   $service_ensure = $unmanaged_service ? {
