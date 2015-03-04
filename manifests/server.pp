@@ -30,8 +30,39 @@ class mysql::server (
   $unmanaged_password = false,
 ) inherits mysql::params {
 
+  # TODO: use params
+  include ::mysql::configuration::mysqld
+  include ::mysql::configuration::mysqld_safe
+  $client_config = {
+    'client'     =>  {
+      'socket' => $::osfamily ? {
+        'RedHat' => '/var/lib/mysql/mysql.sock',
+        default  => '/var/run/mysqld/mysqld.sock',
+      },
+    },
+  }
+  $options = mysql_deepmerge(
+    $client_config,
+    $::mysql::configuration::mysqld::config,
+    $::mysql::configuration::mysqld_safe::config,
+    $::mysql::server::override_options
+  )
+  # END TODO
+
   if ! $unmanaged_config {
-    include ::mysql::configuration
+    create_resources(
+      'augeas',
+      mysql_options_to_augeas($options),
+      {
+        incl    => $config_file,
+        lens    => 'MySQL.lns',
+        require => [
+          File['/etc/mysql/my.cnf'],
+          File[$mysql::server::data_dir],
+        ],
+        notify => Service['mysql'],
+      }
+    )
   }
 
   user { 'mysql':
