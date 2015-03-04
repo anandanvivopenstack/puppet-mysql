@@ -5,7 +5,6 @@ class mysql::server (
     'RedHat' => '/etc/my.cnf',
   },
   $override_options = {},
-  $backup_dir = '/var/backups/mysql',
   $user = 'root',
   $password = undef,
   $unmanaged_config = false,
