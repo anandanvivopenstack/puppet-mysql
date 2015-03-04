@@ -5,10 +5,6 @@ class mysql::server (
     'RedHat' => '/etc/my.cnf',
   },
   $override_options = {},
-  $logfile_group = $::osfamily ? {
-    'Debian' => 'adm',
-    'RedHat' => 'mysql',
-  },
   $mycnf_group = 'root',
   $mycnf_mode = '0644',
   $backup_dir = '/var/backups/mysql',
@@ -160,16 +156,6 @@ class mysql::server (
       }
     }
   
-  }
-
-  $file_content = $::osfamily ? {
-    'RedHat' => template('mysql/logrotate.redhat.erb'),
-    'Debian' => template('mysql/logrotate.debian.erb'),
-    default  => undef,
-  }
-  file { '/etc/logrotate.d/mysql-server':
-    ensure  => file,
-    content => $file_content,
   }
 
   $file_path = $::osfamily ? {
