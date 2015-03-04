@@ -19,7 +19,7 @@ class mysql::configuration::mysqld {
       'old_passwords'        => '0',
       'character-set-server' => 'utf8',
       'log-warnings'         => '1',
-      'datadir'              => $::mysql::server::data_dir,
+      'datadir'              => '/var/lib/mysql',
       'log-error'            => $log_error,
       'log-slow-queries'     => $log_slow_queries,
       'socket'               => $socket,

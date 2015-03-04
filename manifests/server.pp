@@ -1,14 +1,4 @@
-#
 # ==Class: mysql::server
-#
-# Parameters:
-#  $data_dir:
-#    set the data directory path, which is used to store all the databases
-#
-#    If set, copies the content of the default mysql data location. This is
-#    necessary on Debian systems because the package installation script
-#    creates a special user used by the init scripts.
-#
 class mysql::server (
   $config_file = $::osfamily ? {
     'Debian' => '/etc/mysql/my.cnf',
@@ -21,7 +11,6 @@ class mysql::server (
   },
   $mycnf_group = 'root',
   $mycnf_mode = '0644',
-  $data_dir = '/var/lib/mysql',
   $backup_dir = '/var/backups/mysql',
   $user = 'root',
   $password = undef,
@@ -47,6 +36,7 @@ class mysql::server (
     $::mysql::configuration::mysqld_safe::config,
     $::mysql::server::override_options
   )
+  $data_dir = $options['mysqld']['datadir']
   # END TODO
 
   if ! $unmanaged_config {
@@ -58,7 +48,7 @@ class mysql::server (
         lens    => 'MySQL.lns',
         require => [
           File['/etc/mysql/my.cnf'],
-          File[$mysql::server::data_dir],
+          File[$data_dir],
         ],
         notify => Service['mysql'],
       }
